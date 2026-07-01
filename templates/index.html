@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Pixel Art Converter - Minecraft Style</title>
+    <link href="https://fonts.cdnfonts.com/css/minecraftia" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Minecraftia', sans-serif;
+        }
+
+        body {
+            background-image: url('/static/dirt.jpg'); 
+            background-repeat: repeat; 
+            background-size: 64px 64px; 
+            image-rendering: pixelated; 
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 20px;
+            
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* Membuat gradasi gelap melingkar dari tengah ke ujung layar web */
+            background: radial-gradient(circle, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.85) 100%);
+            pointer-events: none; /* Biar tidak menghalangi klik tombol */
+            z-index: 1;
+        }
+
+        /* KONTANER UTAMA (SEKARANG GELAP TRANSPARAN Khas GUI Minecraft) */
+        .card {
+            position: relative;
+            z-index: 2; /* Biar berada di atas efek vignette */
+            
+            /* Mengubah warna latar kotak menjadi hitam/gelap transparan */
+            background-color: rgba(16, 16, 16, 0.82); 
+            width: 100%;
+            max-width: 650px;
+            padding: 25px;
+            box-sizing: border-box;
+            
+            /* Border kaku gelap khas slot inventory besar */
+            border: 4px solid #555555;
+            border-right-color: #ffffff;
+            border-bottom-color: #ffffff;
+        }
+
+        /* JUDUL UTAMA (KUNING LOGO MINECRAFT) */
+        h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #ffffff; 
+            font-size: 24px;
+            text-shadow: 3px 3px 0px #372500, 3px 3px 0px #000;
+            letter-spacing: 1px;
+        }
+
+        /* CONTAINER SLOT / GRUP INPUT */
+        .form-group {
+            margin-bottom: 20px;
+            background-color: rgba(0, 0, 0, 0.4); /* Sedikit lebih gelap agar kontras */
+            padding: 15px;
+            border: 4px solid #373737;
+            border-right-color: #707070;
+            border-bottom-color: #707070;
+            box-sizing: border-box;
+        }
+
+        label {
+            display: block;
+            color: #ffffff;
+            text-shadow: 2px 2px 0px #3f3f3f;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        select, input[type="number"], button, .custom-file-upload {
+            font-family: 'Minecraftia', sans-serif;
+            font-size: 12px;
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border-radius: 0px;
+            cursor: pointer;
+            display: block;
+            
+            /* Style Tombol Abu-abu Minecraft */
+            background-color: #707070;
+            color: #e0e0e0;
+            text-shadow: 2px 2px 0px #3f3f3f;
+            border: 3px solid #000000;
+            box-shadow: inset -3px -3px 0px #4a4a4a, inset 3px 3px 0px #ababab;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        select:hover, button:hover, .custom-file-upload:hover, .download-btn:hover {
+            background-color: #7ca84c; 
+            color: #ffffff;
+            box-shadow: inset -3px -3px 0px #577833, inset 3px 3px 0px #a4cf73;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .color-sliders {
+            display: none; 
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 12px;
+            border: 3px solid #000;
+        }
+
+        .color-box {
+            text-align: center;
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 3px solid #000;
+            cursor: pointer;
+            display: block;
+            margin-bottom: 5px;
+            padding: 0;
+            background: none;
+        }
+
+        .bg-btn {
+            margin-top: 5px;
+        }
+        .bg-btn.active {
+            background-color: #a83c3c;
+            color: white;
+            box-shadow: inset -3px -3px 0px #6e2525, inset 3px 3px 0px #d96868;
+        }
+
+        /* SLOT PREVIEW (INVENTORY STYLE) */
+        .preview-container {
+            text-align: center;
+            margin-top: 25px;
+            background-color: #4a4a4a;
+            padding: 20px;
+            min-height: 100px;
+            border: 4px solid #2e2e2e;
+            border-right-color: #707070;
+            border-bottom-color: #707070;
+            box-sizing: border-box;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 350px;
+            display: none;
+            image-rendering: pixelated; 
+            border: 4px solid #000000;
+            margin-top: 10px;
+        }
+
+        .download-btn {
+            background-color: #4a6f28; 
+            color: #fff;
+            box-shadow: inset -3px -3px 0px #2e4817, inset 3px 3px 0px #7cb04d;
+            margin-top: 15px;
+        }
+
+        .status-text {
+            color: #e0e0e0;
+            text-shadow: 1px 1px 0px #000;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Pixel Art Converter</h2>
+    <form id="pixelForm" onsubmit="return false;">
+        
+        <div class="form-group">
+            <label>INPUT GAMBAR:</label>
+            <label class="custom-file-upload">
+                <input type="file" id="imageInput" accept="image/*" required>
+                <span id="uploadLabelText">UPLOAD FILE GAMBAR</span>
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>UKURAN RESOLUSI PIXEL ART:</label>
+            <select id="sizeSelect" onchange="handleSizeChange()">
+                <option value="16">16 x 16 (Sangat Retro)</option>
+                <option value="32" selected>32 x 32 (Standar)</option>
+                <option value="64">64 x 64 (Detail)</option>
+                <option value="128">128 x 128</option>
+                <option value="custom">Atur aja bos...</option>
+            </select>
+            <div id="customSizeWrapper" style="display: none; margin-top: 10px;">
+                <input type="number" id="pixelSizeCustom" min="8" max="256" value="48" style="color:#000;"> <span style="font-size:12px; color:#fff;">px</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>HAPUS LATAR BELAKANG:</label>
+            <button type="button" id="bgActionBtn" style="display:none;" onclick="toggleBackgroundAI()">Hapus Latar Belakang</button>
+            <div id="uploadFirstMsg" style="font-size: 11px; color: #ffaa00; text-shadow: 1px 1px 0px #000;">*Silakan upload gambar terlebih dahulu untuk membuka fitur ini.</div>
+        </div>
+
+        <div class="form-group">
+            <label>PILIHAN PALET WARNA RETRO:</label>
+            <select id="paletteChoice" onchange="handlePaletteChange()">
+                <option value="none">Warna Asli Gambar</option>
+                <option value="gameboy">Gameboy Klasik (Hijau)</option>
+                <option value="gameboy_pocket">Gameboy Pocket</option>
+                <option value="nes">NES Palette</option>
+                <option value="custom">Buat Palet Sendiri (Custom)...</option>
+            </select>
+            
+            <div class="color-sliders" id="customColors">
+                <div class="color-box"><input type="color" id="c1" value="#0f380f">Warna 1</div>
+                <div class="color-box"><input type="color" id="c2" value="#306230">Warna 2</div>
+                <div class="color-box"><input type="color" id="c3" value="#8bac0f">Warna 3</div>
+                <div class="color-box"><input type="color" id="c4" value="#9bbc0f">Warna 4</div>
+            </div>
+        </div>
+    </form>
+
+    <div class="preview-container">
+        <div id="status" class="status-text">Menunggu file gambar di-upload...</div>
+        <img id="preview" alt="Hasil Pixel Art">
+        <a id="downloadBtn" class="download-btn" style="display:none;" download="pixel_art_minecraft.png">DOWNLOAD FILE (.PNG)</a>
+    </div>
+</div>
+
+<script>
+    let originalFile = null;
+    let bgRemovedBlob = null;
+    let isBgRemovedActive = false;
+
+    function debounce(func, timeout = 100) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        };
+    }
+
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        if(e.target.files.length === 0) return;
+        
+        originalFile = e.target.files[0];
+        bgRemovedBlob = null; 
+        isBgRemovedActive = false;
+        
+        // Ubah teks tombol upload
+        document.getElementById('uploadLabelText').innerText = originalFile.name.toUpperCase();
+
+        // Tampilkan tombol Hapus BG AI, sembunyikan pesan peringatan
+        const bgBtn = document.getElementById('bgActionBtn');
+        bgBtn.style.display = 'block';
+        bgBtn.innerText = "HAPUS LATAR BELAKANG (AI)";
+        bgBtn.classList.remove('active');
+        bgBtn.disabled = false;
+        document.getElementById('uploadFirstMsg').style.display = 'none';
+
+        updatePixelArt();
+    });
+
+    async function toggleBackgroundAI() {
+        if (!originalFile) return;
+        const bgBtn = document.getElementById('bgActionBtn');
+
+        if (isBgRemovedActive) {
+            isBgRemovedActive = false;
+            bgBtn.innerText = "HAPUS LATAR BELAKANG (AI)";
+            bgBtn.classList.remove('active');
+            updatePixelArt();
+        } else {
+            if (!bgRemovedBlob) {
+                bgBtn.innerText = "MEMBONGKAR BACKGROUND VIA AI...";
+                bgBtn.disabled = true;
+                document.getElementById('status').innerText = "AI Sedang memotong latar belakang gambar...";
+                
+                const formData = new FormData();
+                formData.append('image', originalFile);
+                
+                try {
+                    const response = await fetch('/remove-bg', { method: 'POST', body: formData });
+                    if (!response.ok) {
+                        const errMsg = await response.text();
+                        throw new Error(errMsg);
+                    }
+                    bgRemovedBlob = await response.blob();
+                    
+                    isBgRemovedActive = true;
+                    bgBtn.innerText = "KEMBALIKAN LATAR BELAKANG";
+                    bgBtn.classList.add('active');
+                } catch (err) {
+                    alert("Gagal menghapus background: " + err.message);
+                } finally {
+                    bgBtn.disabled = false;
+                }
+            } else {
+                isBgRemovedActive = true;
+                bgBtn.innerText = "KEMBALIKAN LATAR BELAKANG";
+                bgBtn.classList.add('active');
+            }
+            updatePixelArt();
+        }
+    }
+
+    function handleSizeChange() {
+        const isCustom = document.getElementById('sizeSelect').value === 'custom';
+        document.getElementById('customSizeWrapper').style.display = isCustom ? 'block' : 'none';
+        triggerUpdate();
+    }
+
+    function handlePaletteChange() {
+        const isCustom = document.getElementById('paletteChoice').value === 'custom';
+        document.getElementById('customColors').style.display = isCustom ? 'grid' : 'none';
+        triggerUpdate();
+    }
+
+    async function updatePixelArt() {
+        if (!originalFile) return;
+        document.getElementById('status').innerText = "Memproses tekstur...";
+
+        const formData = new FormData();
+        
+        // Cek apakah menggunakan gambar transparan AI atau file asli
+        const currentActiveFile = (isBgRemovedActive && bgRemovedBlob) ? bgRemovedBlob : originalFile;
+        formData.append('image', currentActiveFile, "image.png");
+
+        const sizeChoice = document.getElementById('sizeSelect').value;
+        const finalSize = sizeChoice === 'custom' ? document.getElementById('pixelSizeCustom').value : sizeChoice;
+        formData.append('pixel_size', finalSize);
+        formData.append('palette', document.getElementById('paletteChoice').value);
+
+        if (document.getElementById('paletteChoice').value === 'custom') {
+            formData.append('c1', document.getElementById('c1').value);
+            formData.append('c2', document.getElementById('c2').value);
+            formData.append('c3', document.getElementById('c3').value);
+            formData.append('c4', document.getElementById('c4').value);
+        }
+
+        try {
+            const response = await fetch('/process', { method: 'POST', body: formData });
+            if(!response.ok) throw new Error("Gagal memproses gambar.");
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            
+            // Render ke tag <img> pratinjau
+            const previewImg = document.getElementById('preview');
+            previewImg.src = url;
+            previewImg.style.display = "inline-block";
+            
+            // Pasang ke Tombol Download
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.href = url;
+            downloadBtn.style.display = "block";
+            
+            document.getElementById('status').innerText = "Selesai!";
+        } catch (err) {
+            document.getElementById('status').innerText = "Gagal memperbarui tekstur.";
+        }
+    }
+
+    const triggerUpdate = debounce(() => updatePixelArt(), 100);
+
+    document.getElementById('pixelSizeCustom').addEventListener('input', triggerUpdate);
+    document.getElementById('c1').addEventListener('input', triggerUpdate);
+    document.getElementById('c2').addEventListener('input', triggerUpdate);
+    document.getElementById('c3').addEventListener('input', triggerUpdate);
+    document.getElementById('c4').addEventListener('input', triggerUpdate);
+</script>
+</body>
+</html>
